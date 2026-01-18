@@ -1,13 +1,14 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime
 from typing import Optional
+11111111111111111111111111111111111111111111
 
 class BaseModel(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
     
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
-        sa_column_kwargs={
+        sa_column_kwargs={cd
             "server_default": "CURRENT_TIMESTAMP"
         }
     )
@@ -18,6 +19,7 @@ class BaseModel(SQLModel):
         sa_column_kwargs={
             "onupdate": datetime.utcnow
         }
+
     )
     
     is_deleted: bool = Field(default=False, nullable=False)
