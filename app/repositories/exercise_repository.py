@@ -4,8 +4,6 @@ from typing import Dict, List, Optional
 
 
 class ExerciseRepository:
-   
-
     def __init__(self):
         self._exercises: Dict[int, Exercise] = {} 
         self._next_id: int = 1 
