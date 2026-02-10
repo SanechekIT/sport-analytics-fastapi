@@ -12,6 +12,11 @@ class Exercise(BaseModel):
 exercises_db = []
 exercise_id_counter = 1
 
+class ExerciseCreate(BaseModel):
+    name:str
+    muscle_group: str
+    difficulty: str
+
 @app.get("/")
 async def root():
     return {
@@ -32,27 +37,27 @@ async def get_exercises():
     }
 
 
-
 @app.post("/exercises")
 async def create_exercise(exercise: ExerciseCreate):
     global exercise_id_counter
 
-    # TODO: Добавь здесь логику создания
-    # 1. Создай новый словарь с данными упражнения
-    # 2. Добавь поле "id" со значением exercise_id_counter
-    # 3. Увеличь exercise_id_counter на 1
-    # 4. Добавь упражнение в exercises_db
-    # 5. Верни созданное упражнение
+    new_exercise = {
+        "name": exercise.name,
+        "muscle_group": exercise.muscle_group,
+        "difficulty": exercise.difficulty
+    }
 
-    pass
-
+    new_exercise["id"] = exercise_id_counter
+    exercise_id_counter += 1
+    exercises_db.append(new_exercise)
+    return new_exercise
 
 # Дополнительно можешь добавить (опционально):
 @app.get("/exercises/{exercise_id}")
 async def get_exercise_by_id(exercise_id: int):
-    """
-    Получить упражнение по ID.
-    """
-    # TODO: Найди упражнение в exercises_db по ID
-    # Если не найдено - верни HTTP 404
-    pass
+     for exercise in exercises_db:
+        if exercise["id"] == exercise_id:
+            return exercise
+
+    # Если не нашли — ошибка 404
+    raise HTTPException(status_code=404, detail="Exercise not found")
