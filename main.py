@@ -52,7 +52,7 @@ async def create_exercise(exercise: ExerciseCreate):
     exercises_db.append(new_exercise)
     return new_exercise
 
-# Дополнительно можешь добавить (опционально):
+
 @app.get("/exercises/{exercise_id}")
 async def get_exercise_by_id(exercise_id: int):
      for exercise in exercises_db:
