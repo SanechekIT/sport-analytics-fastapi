@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from typing import Optional
 
-SECRET_KEY = "твой_секретный_ключ_минимум_32_символа"  # ЗАМЕНИ!
+SECRET_KEY = "cdsfzxcvfr1333468hdbsyzm_extra_chars_here"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
