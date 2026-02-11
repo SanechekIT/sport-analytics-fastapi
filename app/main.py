@@ -61,3 +61,4 @@ async def get_exercise_by_id(exercise_id: int):
 
     # Если не нашли — ошибка 404
     raise HTTPException(status_code=404, detail="Exercise not found")
+
