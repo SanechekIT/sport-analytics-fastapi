@@ -1,11 +1,11 @@
-# app/auth.py
+
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-# Импорт модели пользователя (путь может отличаться!)
+
 from models import User
 
 # Конфигурация
@@ -13,7 +13,7 @@ SECRET_KEY = "cdsfzxcvfr1333468hdbsyzm_extra_chars_here"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# ========== ХЕШИРОВАНИЕ (новое) ==========
+# Хешируем
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -27,7 +27,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-# ========== СОЗДАНИЕ ТОКЕНА (уже есть) ==========
+#Создаем токен
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Создаёт JWT токен"""
     to_encode = data.copy()
@@ -42,7 +42,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-# ========== ПРОВЕРКА ТОКЕНА (новое) ==========
+#Проверяем токен
 def verify_token(token: str) -> Optional[dict]:
     """Проверяет токен, возвращает данные или None"""
     try:
@@ -52,7 +52,7 @@ def verify_token(token: str) -> Optional[dict]:
         return None
 
 
-# ========== ПОЛУЧЕНИЕ ПОЛЬЗОВАТЕЛЯ (новое) ==========
+#Получаем пользователя
 def get_current_user(token: str, db: Session) -> Optional[User]:
     """По токену находит пользователя в БД"""
     # 1. Проверяем токен
@@ -60,7 +60,7 @@ def get_current_user(token: str, db: Session) -> Optional[User]:
     if not payload:
         return None
 
-    # 2. Достаем email
+    #Достаём его email
     email = payload.get("sub")
     if not email:
         return None
