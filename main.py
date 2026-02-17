@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 #СОЗДАЁМ САМО API
 app = FastAPI(
     title = "Fitness Tracker API",
@@ -18,7 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-#КОРНЕВОЙ РОУТ
 @app.get("/")
 async def root():
     return {
@@ -29,3 +29,18 @@ async def root():
 @app.get("/health")
 def health():
     return {"status":"healthy"}
+
+@app.post("/register")
+def register():
+    pass
+
+
+@app.post("/login")
+def login():
+    pass
+
+
+@app.get("/users/me")
+def get_current_user():
+    pass
+
