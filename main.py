@@ -31,16 +31,27 @@ def health():
     return {"status":"healthy"}
 
 @app.post("/register")
-def register():
-    pass
+def register(user_data : UserCreate):
+    email = user_data.email
+    password = user_data.password
+    return {"message": "user created"}
 
 
 @app.post("/login")
-def login():
-    pass
+def login(user_data: UserCreate):
+    # Ищем пользователя по email
+    for user in fake_users_db:
+        if user["email"] == user_data.email:
+            # Проверяем пароль (в реальности надо сравнивать хеши)
+            if user["password"] == user_data.password:
+                return {"message": "успешный вход"}
+            else:
+                raise HTTPException(status_code=400, detail="Неверный пароль")
+# Если пользователь не найден
+    raise HTTPException(status_code=404, detail="Пользователь не найден")
 
 
 @app.get("/users/me")
 def get_current_user():
-    pass
-
+    # Пока просто заглушка, потом будем проверять токен
+    return {"message": "тут будут данные пользователя"}
