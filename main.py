@@ -55,3 +55,20 @@ def login(user_data: UserCreate):
 def get_current_user():
     # Пока просто заглушка, потом будем проверять токен
     return {"message": "тут будут данные пользователя"}
+
+
+@app.post("/exercises")
+def create_exercises(exercises:ExercisEcreate):
+    db_exercise = Exercise(**exercise.dict())
+    db.add(db_exercise)
+    db.commit()
+    return db_exercise
+
+
+@app.get("/exercises")
+def get_all_exercises():  # или get_exercises_list
+    return db.exec(select(Exercise)).all()
+
+@app.get("/exercises/{exercise_id}")  # лучше {exercise_id}, а не просто {id}
+def get_exercise_by_id(exercise_id: int):  # или просто get_exercise
+    return db.get(Exercise, exercise_id)"тут будут данные пользователя"}
