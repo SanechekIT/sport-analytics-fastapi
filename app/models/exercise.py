@@ -1,11 +1,11 @@
-from sqlmodel import SQLModel,Field
+from sqlmodel import SQLModel, Field
 from typing import Optional
 
-class Exercise(SQLModel,table=True):
+class Exercise(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
+    name: str = Field(index=True)
     workout_id: int = Field(foreign_key="workout.id")
-    description : str
-    sets : int =
-    reps : int =
-    weight : int =
+    description: Optional[str] = Field(default=None)  # сделаем опциональным
+    sets: int
+    reps: int
+    weight: Optional[int] = Field(default=None)  # вес может быть None (упражнения с весом тела)
