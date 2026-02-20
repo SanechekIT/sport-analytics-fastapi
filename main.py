@@ -97,9 +97,26 @@ def create_workout(
     return workout
 
 
+@app.post("/workouts", response_model=WorkoutSchema)
+def create_workout(
+    workout_data: WorkoutCreate,
+    session: Session = Depends(get_session)
+):
+    # Создаем тренировку (user_id=1 временно, пока нет авторизации)
+    workout = Workout(
+        **workout_data.dict(),
+        user_id=1
+    )
+    
+    session.add(workout)
+    session.commit()
+    session.refresh(workout)
+    
+    return workout
+
 @app.get("/workouts")
 def get_workouts(
-        session: Session = Depends(get_session)
+    session: Session = Depends(get_session)
 ):
     workouts = session.exec(select(Workout)).all()
-    return workouts)"тут будут данные пользователя"}
+    return workouts
