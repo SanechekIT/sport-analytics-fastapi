@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Depends
+from sqlmodel import Session
+from schemas.workout import WorkoutCreate,Workout as WorkoutSchema
 from fastapi.middleware.cors import CORSMiddleware
+from models import Workout
+from database import get_session
 import os
 from dotenv import load_dotenv
 
@@ -72,3 +76,30 @@ def get_all_exercises():  # или get_exercises_list
 @app.get("/exercises/{exercise_id}")  # лучше {exercise_id}, а не просто {id}
 def get_exercise_by_id(exercise_id: int):  # или просто get_exercise
     return db.get(Exercise, exercise_id)"тут будут данные пользователя"}
+
+    @app.post("/workouts", response_model=WorkoutSchema)
+
+
+def create_workout(
+        workout_data: WorkoutCreate,
+        session: Session = Depends(get_session)
+):
+    # Создаем тренировку (user_id=1 временно, пока нет авторизации)
+    workout = Workout(
+        **workout_data.dict(),
+        user_id=1
+    )
+
+    session.add(workout)
+    session.commit()
+    session.refresh(workout)
+
+    return workout
+
+
+@app.get("/workouts")
+def get_workouts(
+        session: Session = Depends(get_session)
+):
+    workouts = session.exec(select(Workout)).all()
+    return workouts)"тут будут данные пользователя"}
