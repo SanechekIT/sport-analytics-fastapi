@@ -1,6 +1,7 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from pydantic import BaseModel
 from datetime import datetime
+from typing import List, Optional
+from .workout_exercise import WorkoutExercise
 
 # Базовый класс - только общие поля
 class WorkoutBase(SQLModel):  # Наследуем от SQLModel, но НЕ table=True
@@ -17,3 +18,12 @@ class WorkoutCreate(WorkoutBase):
 class Workout(WorkoutBase, table=True):  # table=True - это таблица в БД
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
+    
+class WorkoutWithExercises(Workout):
+    """
+    Схема для тренировки со всеми упражнениями
+    """
+    exercises: List[WorkoutExercise] = []  # список упражнений, по умолчанию пустой
+    
+    class Config:
+        orm_mode = True
