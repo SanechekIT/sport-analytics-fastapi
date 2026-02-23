@@ -1,155 +1,201 @@
-from fastapi import FastAPI,Depends
-from sqlmodel import Session
-from schemas.workout import WorkoutCreate,Workout as WorkoutSchema
-from fastapi.middleware.cors import CORSMiddleware
-from models import Workout
+from fastapi import FastAPI, Depends, HTTPException
+from sqlmodel import Session, select
 from database import get_session
-import os
-from dotenv import load_dotenv
+from models import User, Workout, Exercise
+from schemas import UserCreate, WorkoutCreate, ExerciseCreate
 
-load_dotenv()
-
-#СОЗДАЁМ САМО API
-app = FastAPI(
-    title = "Fitness Tracker API",
-    description = "API для отслеживания тренировок",
-    version = "1.0.0"
-)
-#CORS ПРОСЛОЙКА
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins = ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 @app.get("/")
 async def root():
     return {
-        "message":"Fitness Tracker API",
-        "docs":"/docs",
-        "status":"running"
+        "message": "Fitness Tracker API",
+        "docs": "/docs",
+        "status": "running"
     }
+
 @app.get("/health")
 def health():
-    return {"status":"healthy"}
+    return {"status": "healthy"}
 
 @app.post("/register")
-def register(user_data : UserCreate):
-    email = user_data.email
-    password = user_data.password
-    return {"message": "user created"}
-
+def register(user_data: UserCreate, session: Session = Depends(get_session)):
+    # Проверяем, нет ли уже такого пользователя
+    existing = session.exec(select(User).where(User.email == user_data.email)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
+    
+    # Создаем пользователя (пароль нужно хешировать!)
+    user = User(email=user_data.email, password=user_data.password)  # TODO: хешировать пароль
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"message": "Пользователь создан", "user_id": user.id}
 
 @app.post("/login")
-def login(user_data: UserCreate):
+def login(user_data: UserCreate, session: Session = Depends(get_session)):
     # Ищем пользователя по email
-    for user in fake_users_db:
-        if user["email"] == user_data.email:
-            # Проверяем пароль (в реальности надо сравнивать хеши)
-            if user["password"] == user_data.password:
-                return {"message": "успешный вход"}
-            else:
-                raise HTTPException(status_code=400, detail="Неверный пароль")
-# Если пользователь не найден
-    raise HTTPException(status_code=404, detail="Пользователь не найден")
-
+    user = session.exec(select(User).where(User.email == user_data.email)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    
+    # Проверяем пароль (в реальности сравниваем хеши)
+    if user.password != user_data.password:  # TODO: сравнивать хеши
+        raise HTTPException(status_code=400, detail="Неверный пароль")
+    
+    return {"message": "Успешный вход", "user_id": user.id}
 
 @app.get("/users/me")
-def get_current_user():
-    # Пока просто заглушка, потом будем проверять токен
-    return {"message": "тут будут данные пользователя"}
-
+def get_current_user(user_id: int, session: Session = Depends(get_session)):
+    # В реальности user_id берется из токена
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
 
 @app.post("/exercises")
-def create_exercises(exercises:ExercisEcreate):
-    db_exercise = Exercise(**exercise.dict())
-    db.add(db_exercise)
-    db.commit()
-    return db_exercise
-
+def create_exercise(exercise_data: ExerciseCreate, session: Session = Depends(get_session)):
+    exercise = Exercise(**exercise_data.dict())
+    session.add(exercise)
+    session.commit()
+    session.refresh(exercise)
+    return exercise
 
 @app.get("/exercises")
-def get_all_exercises():  # или get_exercises_list
-    return db.exec(select(Exercise)).all()
+def get_all_exercises(session: Session = Depends(get_session)):
+    exercises = session.exec(select(Exercise)).all()
+    return exercises
 
-@app.get("/exercises/{exercise_id}")  # лучше {exercise_id}, а не просто {id}
-def get_exercise_by_id(exercise_id: int):  # или просто get_exercise
-    return db.get(Exercise, exercise_id)"тут будут данные пользователя"}
-
-    @app.post("/workouts", response_model=WorkoutSchema)
-
-
-def create_workout(
-        workout_data: WorkoutCreate,
-        session: Session = Depends(get_session)
-):
-    # Создаем тренировку (user_id=1 временно, пока нет авторизации)
-    workout = Workout(
-        **workout_data.dict(),
-        user_id=1
-    )
-
-    session.add(workout)
-    session.commit()
-    session.refresh(workout)
-
-    return workout
-
+@app.get("/exercises/{exercise_id}")
+def get_exercise_by_id(exercise_id: int, session: Session = Depends(get_session)):
+    exercise = session.get(Exercise, exercise_id)
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Упражнение не найдено")
+    return exercise
 
 @app.post("/workouts", response_model=WorkoutSchema)
 def create_workout(
     workout_data: WorkoutCreate,
+    user_id: int,  # В реальности из токена
     session: Session = Depends(get_session)
 ):
-    # Создаем тренировку (user_id=1 временно, пока нет авторизации)
-    workout = Workout(
-        **workout_data.dict(),
-        user_id=1
-    )
-    
+    workout = Workout(**workout_data.dict(), user_id=user_id)
     session.add(workout)
     session.commit()
     session.refresh(workout)
-    
     return workout
 
 @app.get("/workouts")
 def get_workouts(
+    user_id: int,  # В реальности из токена
     session: Session = Depends(get_session)
 ):
-    workouts = session.exec(select(Workout)).all()
+    workouts = session.exec(select(Workout).where(Workout.user_id == user_id)).all()
     return workouts
 
+@app.post("/workouts/{workout_id}/exercises")
+def add_exercise_to_workout(
+    workout_id: int,
+    exercise_data: dict,  # Тут будет {exercise_id, sets, reps, weight}
+    user_id: int,  # В реальности из токена
+    session: Session = Depends(get_session)
+):
+    # Проверяем, что тренировка существует и принадлежит пользователю
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404, detail="Тренировка не найдена")
+    if workout.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к этой тренировке")
+    
+    # Проверяем, что упражнение существует
+    exercise = session.get(Exercise, exercise_data["exercise_id"])
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Упражнение не найдено")
+    
+    # Создаем запись упражнения в тренировке
+    workout_exercise = WorkoutExercise(
+        workout_id=workout_id,
+        **exercise_data
+    )
+    session.add(workout_exercise)
+    session.commit()
+    session.refresh(workout_exercise)
+    return workout_exercise
 
-@app.post("/workouts/{id}/exercises")
-def post_exercises(id: int, exercise_data: dict):# 1. Принимаю id и данные упражнения
-    # - проверил, что тренировка существует
-    # - создал запись упражнения для этой тренировки
-    # - сохранил в базу
-    return {"ok": True} #ВЕРНУЛ результат
-
-@app.get("/workouts/{id}")
-def get_workouts_id(id: int):  # 1. ПРИНЯЛ id из URL
-    workout = db.get(id)    # 2. СДЕЛАЛ - нашел тренировку
-    return workout # 3. ВЕРНУЛ результат
-
+@app.get("/workouts/{workout_id}")
+def get_workout_by_id(
+    workout_id: int,
+    user_id: int,  # В реальности из токена
+    session: Session = Depends(get_session)
+):
+    # Загружаем тренировку с упражнениями
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404, detail="Тренировка не найдена")
+    if workout.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к этой тренировке")
+    
+    # Подгружаем упражнения
+    exercises = session.exec(
+        select(WorkoutExercise).where(WorkoutExercise.workout_id == workout_id)
+    ).all()
+    
+    return {
+        "workout": workout,
+        "exercises": exercises
+    }
 
 @app.get("/workouts/history")
 def get_workouts_history(
-        session: Session,  # что нужно для работы (инструмент)
-        user_id: int  # чьи данные ищем (параметр)
+    user_id: int,  # В реальности из токена
+    session: Session = Depends(get_session)
 ):
-    # Здесь логика:
-    trainings = get_trainings_from_db(session, user_id)
-    top = calculate_top(trainings)
-    progress = calculate_progress(trainings)
-
-    return {  # ВОЗВРАЩАЕМ результат
-        "trainings": trainings,
-        "top_exercises": top,
+    # Получаем все тренировки пользователя с упражнениями
+    workouts = session.exec(
+        select(Workout).where(Workout.user_id == user_id).order_by(Workout.date.desc())
+    ).all()
+    
+    # Собираем статистику по упражнениям
+    exercise_stats = {}
+    all_workout_exercises = []
+    
+    for workout in workouts:
+        exercises = session.exec(
+            select(WorkoutExercise).where(WorkoutExercise.workout_id == workout.id)
+        ).all()
+        all_workout_exercises.extend(exercises)
+        
+        # Считаем частоту упражнений
+        for we in exercises:
+            if we.exercise_id not in exercise_stats:
+                exercise_stats[we.exercise_id] = {
+                    "count": 0,
+                    "max_weight": 0,
+                    "exercise": session.get(Exercise, we.exercise_id)
+                }
+            exercise_stats[we.exercise_id]["count"] += 1
+            if we.weight > exercise_stats[we.exercise_id]["max_weight"]:
+                exercise_stats[we.exercise_id]["max_weight"] = we.weight
+    
+    # Топ упражнений (по частоте)
+    top_exercises = sorted(
+        [{"name": v["exercise"].name, "count": v["count"], "max_weight": v["max_weight"]} 
+         for v in exercise_stats.values()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:5]  # Топ-5
+    
+    # Прогресс (рост весов по датам)
+    progress = {}
+    for we in sorted(all_workout_exercises, key=lambda x: x.date):
+        if we.exercise_id not in progress:
+            progress[we.exercise_id] = []
+        progress[we.exercise_id].append({
+            "date": we.date,
+            "weight": we.weight,
+            "reps": we.reps
+        })
+    
+    return {
+        "trainings": workouts,
+        "top_exercises": top_exercises,
         "progress": progress
     }
-
-
-
