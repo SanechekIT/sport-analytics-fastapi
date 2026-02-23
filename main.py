@@ -120,3 +120,36 @@ def get_workouts(
 ):
     workouts = session.exec(select(Workout)).all()
     return workouts
+
+
+@app.post("/workouts/{id}/exercises")
+def post_exercises(id: int, exercise_data: dict):# 1. Принимаю id и данные упражнения
+    # - проверил, что тренировка существует
+    # - создал запись упражнения для этой тренировки
+    # - сохранил в базу
+    return {"ok": True} #ВЕРНУЛ результат
+
+@app.get("/workouts/{id}")
+def get_workouts_id(id: int):  # 1. ПРИНЯЛ id из URL
+    workout = db.get(id)    # 2. СДЕЛАЛ - нашел тренировку
+    return workout # 3. ВЕРНУЛ результат
+
+
+@app.get("/workouts/history")
+def get_workouts_history(
+        session: Session,  # что нужно для работы (инструмент)
+        user_id: int  # чьи данные ищем (параметр)
+):
+    # Здесь логика:
+    trainings = get_trainings_from_db(session, user_id)
+    top = calculate_top(trainings)
+    progress = calculate_progress(trainings)
+
+    return {  # ВОЗВРАЩАЕМ результат
+        "trainings": trainings,
+        "top_exercises": top,
+        "progress": progress
+    }
+
+
+
