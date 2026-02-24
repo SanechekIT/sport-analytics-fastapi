@@ -2,8 +2,9 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
+from typing import List
 
-class Workout(SQLModel, table=True):
+class Workout(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     title: str
