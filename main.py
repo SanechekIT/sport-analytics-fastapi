@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
-from database import get_session
+from app.database.connection import get_db as get_session
 from app.models.user import User
 from app.models.workout import Workout
 from app.models.exercise import Exercise
