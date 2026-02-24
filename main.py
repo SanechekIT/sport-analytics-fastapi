@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_session
-from models import User, Workout, Exercise
+from app.models.user import User
+from app.models.workout import Workout
+from app.models.exercise import Exercise
 from schemas import UserCreate, WorkoutCreate, ExerciseCreate
 
 @app.get("/")
