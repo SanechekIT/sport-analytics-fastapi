@@ -18,12 +18,12 @@ def health():
 
 @app.post("/register")
 def register(user_data: UserCreate, session: Session = Depends(get_session)):
-    # Проверяем, нет ли уже такого пользователя
+    # Проверяю, нет ли уже такого пользователя
     existing = session.exec(select(User).where(User.email == user_data.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
     
-    # Создаем пользователя (пароль нужно хешировать!)
+    # Создаю пользователя (пароль нужно хешировать)
     user = User(email=user_data.email, password=user_data.password)  # TODO: хешировать пароль
     session.add(user)
     session.commit()
@@ -32,12 +32,12 @@ def register(user_data: UserCreate, session: Session = Depends(get_session)):
 
 @app.post("/login")
 def login(user_data: UserCreate, session: Session = Depends(get_session)):
-    # Ищем пользователя по email
+    # Ищу пользователя по email
     user = session.exec(select(User).where(User.email == user_data.email)).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     
-    # Проверяем пароль (в реальности сравниваем хеши)
+    # Проверяю пароль (в реальности сравниваем хеши)
     if user.password != user_data.password:  # TODO: сравнивать хеши
         raise HTTPException(status_code=400, detail="Неверный пароль")
     
@@ -98,19 +98,19 @@ def add_exercise_to_workout(
     user_id: int,  # В реальности из токена
     session: Session = Depends(get_session)
 ):
-    # Проверяем, что тренировка существует и принадлежит пользователю
+    # Проверяю, что тренировка существует и принадлежит пользователю
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404, detail="Тренировка не найдена")
     if workout.user_id != user_id:
         raise HTTPException(status_code=403, detail="Нет доступа к этой тренировке")
     
-    # Проверяем, что упражнение существует
+    # Проверяю, что упражнение существует
     exercise = session.get(Exercise, exercise_data["exercise_id"])
     if not exercise:
         raise HTTPException(status_code=404, detail="Упражнение не найдено")
     
-    # Создаем запись упражнения в тренировке
+    # Создаю запись упражнения в тренировке
     workout_exercise = WorkoutExercise(
         workout_id=workout_id,
         **exercise_data
@@ -126,14 +126,14 @@ def get_workout_by_id(
     user_id: int,  # В реальности из токена
     session: Session = Depends(get_session)
 ):
-    # Загружаем тренировку с упражнениями
+    # Загружаю тренировку с упражнениями
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404, detail="Тренировка не найдена")
     if workout.user_id != user_id:
         raise HTTPException(status_code=403, detail="Нет доступа к этой тренировке")
     
-    # Подгружаем упражнения
+    # Подгружаю упражнения
     exercises = session.exec(
         select(WorkoutExercise).where(WorkoutExercise.workout_id == workout_id)
     ).all()
@@ -148,12 +148,12 @@ def get_workouts_history(
     user_id: int,  # В реальности из токена
     session: Session = Depends(get_session)
 ):
-    # Получаем все тренировки пользователя с упражнениями
+    # Получаю все тренировки пользователя с упражнениями
     workouts = session.exec(
         select(Workout).where(Workout.user_id == user_id).order_by(Workout.date.desc())
     ).all()
     
-    # Собираем статистику по упражнениям
+    # Собираю статистику по упражнениям
     exercise_stats = {}
     all_workout_exercises = []
     
@@ -163,7 +163,7 @@ def get_workouts_history(
         ).all()
         all_workout_exercises.extend(exercises)
         
-        # Считаем частоту упражнений
+        # Считаю частоту упражнений
         for we in exercises:
             if we.exercise_id not in exercise_stats:
                 exercise_stats[we.exercise_id] = {
