@@ -4,7 +4,7 @@ from app.database.connection import get_db as get_session
 from app.models.user import User
 from app.models.workout import Workout
 from app.models.exercise import Exercise
-from schemas import UserCreate, WorkoutCreate, ExerciseCreate
+from app.schemas import UserCreate, WorkoutCreate, ExerciseCreate
 
 @app.get("/")
 async def root():
