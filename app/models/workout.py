@@ -1,17 +1,13 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
-from typing import List
 
-class Workout(SQLModel, table=True, extend_existing=True):
+class Workout(SQLModel, table=True):
+    __tablename__ = "workouts"
+    
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id")
     name: str
-    title: str
     description: Optional[str] = None
-    date: Optional[datetime] = None  # или datetime = Field(default_factory=datetime.now)
-    user_id: int = Field(foreign_key="user.id")
-    notes: str
-
-    # Добавил relationship:
-    exercises: List["WorkoutExercise"] = Relationship(back_populates="workout")
+    date: datetime = Field(default_factory=datetime.utcnow)
+    duration: Optional[int] = None
