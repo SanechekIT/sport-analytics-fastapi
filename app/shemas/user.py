@@ -104,3 +104,4 @@ class UserUpdate(BaseModel):
     # Пароль обычно обновляется отдельным эндпоинтом
     # current_password: Optional[str] = None
     # new_password: Optional[str] = None
+r] = None
