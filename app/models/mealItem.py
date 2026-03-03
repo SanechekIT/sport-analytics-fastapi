@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 
-class Mealitem(SQLMeal):
+class Mealitem(SQLModel):
     __tablenames__ = "mealitem"
 
     id: Optional[int] = Field(default = None,primary_key=True)
