@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
 
-class MealItem(SQLModel): 
+class MealItem(SQLModel,table=True): 
     __tablename__ = "meal_items" 
 
     id: Optional[int] = Field(default=None, primary_key=True)  
