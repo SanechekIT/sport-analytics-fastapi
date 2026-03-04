@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 
-class Product(SQLModel):
+class Product(SQLModel,table=True):
     __tablename__ = "products" 
     
     id: Optional[int] = Field(default=None, primary_key=True)
