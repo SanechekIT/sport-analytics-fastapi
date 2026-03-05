@@ -1,14 +1,24 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
+from typing import Optional, List, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.meal_item import MealItem
+
 
 class Meal(SQLModel, table=True):
-    __tablename__ = "meals"  # Таблица называется "meals"
-    
+    __tablename__ = "meals"
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True) 
-    date: datetime = Field(index=True)
-    meal_type: str = Field(max_length=50)
-    created_at: datetime = Field(default_factory=datetime.now)
-    description: Optional[str] = Field(default=None, max_length=500)
-    calories: Optional[int] = Field(default=None, ge=0, le=10000)
+    name: str = Field(index=True)
+    date: datetime = Field(default_factory=datetime.utcnow)
+    user_id: int = Field(foreign_key="users.id")
+
+
+    user: Optional["User"] = Relationship(back_populates="meals")
+    items: List["MealItem"] = Relationship(
+        back_populates="meal",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
