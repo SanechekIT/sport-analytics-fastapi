@@ -1,18 +1,13 @@
 from pydantic import BaseModel
 
-class MealItemBase(BaseModel):
-    product_id: int
-    quantity: float  # сколько грамм/штук
+class MealItemCreate(BaseModel):
+    name: str
+    calories: int
+    protein: float
+   
 
-class MealItemCreate(MealItemBase):
-    pass
+class MealItem(MealItemCreate):  # Наследует все поля из Create
+    id: int 
 
-class MealItem(MealItemBase):
-    id: int
-    meal_id: int
-    # Добавляю посчитанные КБЖУ для удобства фронта
-    product_name: str
-    calories: float
-    proteins: float
-    fats: float
-    carbs: float
+    class Config:
+        orm_mode = True 
