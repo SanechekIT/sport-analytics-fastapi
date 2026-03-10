@@ -1,13 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
-from app.models.meal_item import MealItem
+from app.models.mealitem import MealItem
 from app.shemas.meal_item import MealItemCreate, MealItemUpdate
 from app.repositories.meal_item_repository import MealItemRepository
 from typing import List
-
-# Создаем роутер
+# Создаю роутер
 router = APIRouter(prefix="/products", tags=["products"])
 
-# Создаем один экземпляр репозитория для всех эндпоинтов
+# Создаю один экземпляр репозитория для всех эндпоинтов
 repository = MealItemRepository()
 
 
@@ -16,7 +15,7 @@ repository = MealItemRepository()
 def create_product(product: MealItemCreate):
     """
     Создает новый продукт
-    
+
     - **name**: название продукта
     - **description**: описание (необязательно)
     - **calories**: калории
@@ -60,14 +59,14 @@ def get_product(product_id: int):
 def update_product(product_id: int, product_update: MealItemUpdate):
     """
     Обновляет существующий продукт
-    
+
     - **product_id**: ID продукта для обновления
     - **product_update**: новые данные (все поля опциональны)
     """
     # Создаем продукт с обновленными данными
     updated_data = MealItem(**product_update.dict())
     updated = repository.update(product_id, updated_data)
-    
+
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -100,7 +99,7 @@ def search_products(query: str):
     """
     all_products = repository.get_all()
     results = [
-        product for product in all_products 
+        product for product in all_products
         if query.lower() in product.name.lower()
     ]
     return results
