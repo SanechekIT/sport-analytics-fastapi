@@ -3,6 +3,21 @@ from datetime import datetime
 from typing import Optional
 
 
+# Базовая схема пользователя (общие поля)
+class UserBase(BaseModel):
+    email: EmailStr
+    username: str
+    is_active: bool = True
+
+
+# Основная схема User (для from_attributes)
+class User(UserBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 # 1. Схема для создания пользователя (регистрация)
 class UserCreate(BaseModel):
     """
@@ -104,4 +119,3 @@ class UserUpdate(BaseModel):
     # Пароль обычно обновляется отдельным эндпоинтом
     # current_password: Optional[str] = None
     # new_password: Optional[str] = None
-r] = None
