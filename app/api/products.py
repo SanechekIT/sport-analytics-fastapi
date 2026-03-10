@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.models.meal_item import MealItem
+from app.models.mealitem import MealItem
 from app.shemas.meal_item import MealItemCreate, MealItemUpdate
 from app.repositories.meal_item_repository import MealItemRepository
 from typing import List
