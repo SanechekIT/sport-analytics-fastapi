@@ -7,7 +7,7 @@ class MealItemRepository:
         self._meal_items: Dict[int, MealItem] = {}  # словарь для хранения
         self._next_id: int = 1  # счетчик для ID
 
-    # CREATE (создать)
+    
     def create(self, meal_item: MealItem) -> MealItem:
         """
         Сохраняет блюдо/продукт в репозитории.
@@ -33,7 +33,7 @@ class MealItemRepository:
         """
         return self._meal_items.get(item_id)
 
-    # UPDATE (обновить)
+    
     def update(self, item_id: int, updated_data: MealItem) -> Optional[MealItem]:
         """
         Обновляет существующее блюдо
@@ -47,7 +47,7 @@ class MealItemRepository:
 
         return updated_data
 
-    # DELETE (удалить)
+   
     def delete(self, item_id: int) -> bool:
         """
         Удаляет блюдо. Возвращает True если удалено, False если не найдено
