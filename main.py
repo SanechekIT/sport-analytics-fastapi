@@ -7,9 +7,12 @@ from app.models.exercise import Exercise
 from app.models.workout_exercise import WorkoutExercise
 from app.schemas import UserCreate, WorkoutCreate, ExerciseCreate
 from datetime import datetime
+from app.api import products
 
 # Создаю приложение
 app = FastAPI(title="Fitness Tracker API")
+
+app.include_router(products.router)
 
 @app.get("/")
 async def root():
