@@ -22,3 +22,11 @@ class WorkoutCreate(BaseModel):
     description: Optional[str] = None
     date: Optional[datetime] = None
     duration: Optional[int] = None
+
+
+class WorkoutUpdate(BaseModel):
+    """Схема для обновления тренировки"""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    date: Optional[datetime] = None
+    duration: Optional[int] = None
