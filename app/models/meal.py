@@ -19,6 +19,6 @@ class Meal(SQLModel, table=True):
 
     user: Optional["User"] = Relationship(back_populates="meals")
     items: List["MealItem"] = Relationship(
-        back_populates="meal",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
+    back_populates="meal",
+    cascade="all, delete-orphan"  # ← напрямую
+))
