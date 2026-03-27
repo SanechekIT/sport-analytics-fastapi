@@ -21,4 +21,4 @@ class Meal(SQLModel, table=True):
     items: List["MealItem"] = Relationship(
     back_populates="meal",
     cascade="all, delete-orphan"  # ← напрямую
-))
+)
