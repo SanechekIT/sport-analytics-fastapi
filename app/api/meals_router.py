@@ -7,6 +7,7 @@ from datetime import datetime
 
 router = APIRouter(prefix="/meals", tags=["meals"])
 
+
 @router.post("/", response_model=schemas.Meal, status_code=status.HTTP_201_CREATED)
 def create_meal(meal: schemas.MealCreate, db: Session = Depends(get_db)):
     """Создать прием пищи"""
@@ -28,6 +29,7 @@ def create_meal(meal: schemas.MealCreate, db: Session = Depends(get_db)):
             detail=f"Ошибка при создании приема пищи: {str(e)}"
         )
 
+
 @router.get("/", response_model=list[schemas.Meal])
 def list_meals(
     skip: int = 0, 
@@ -40,11 +42,9 @@ def list_meals(
     """Список приемов с возможностью фильтрации"""
     query = db.query(models.Meal)
     
-    # Фильтрация по типу приема
     if meal_type:
         query = query.filter(models.Meal.meal_type == meal_type)
     
-    # Фильтрация по дате
     if date_from:
         query = query.filter(models.Meal.date_time >= date_from)
     if date_to:
@@ -52,6 +52,40 @@ def list_meals(
     
     meals = query.order_by(models.Meal.date_time.desc()).offset(skip).limit(limit).all()
     return meals
+
+
+@router.get("/daily/", response_model=list[schemas.Meal])
+def get_meals_by_date(
+    date: str = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Получить все приёмы пищи за конкретную дату.
+    Пример: /meals/daily/?date=2025-04-15
+    """
+    if not date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Параметр 'date' обязателен. Пример: ?date=2025-04-15"
+        )
+    
+    try:
+        target_date = datetime.strptime(date, "%Y-%m-%d")
+        start_of_day = target_date.replace(hour=0, minute=0, second=0)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный формат даты. Используйте ГГГГ-ММ-ДД, например: 2025-04-15"
+        )
+    
+    meals = db.query(models.Meal).filter(
+        models.Meal.date_time >= start_of_day,
+        models.Meal.date_time <= end_of_day
+    ).order_by(models.Meal.date_time).all()
+    
+    return meals
+
 
 @router.get("/{id}", response_model=schemas.Meal)
 def get_meal(id: int, db: Session = Depends(get_db)):
@@ -63,6 +97,7 @@ def get_meal(id: int, db: Session = Depends(get_db)):
             detail=f"Прием пищи с id {id} не найден"
         )
     return meal
+
 
 @router.put("/{id}", response_model=schemas.Meal)
 def update_meal(id: int, meal_update: schemas.MealUpdate, db: Session = Depends(get_db)):
@@ -89,6 +124,7 @@ def update_meal(id: int, meal_update: schemas.MealUpdate, db: Session = Depends(
             detail=f"Ошибка при обновлении: {str(e)}"
         )
 
+
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_meal(id: int, db: Session = Depends(get_db)):
     """Удалить прием пищи"""
@@ -110,10 +146,10 @@ def delete_meal(id: int, db: Session = Depends(get_db)):
             detail=f"Ошибка при удалении: {str(e)}"
         )
 
+
 @router.post("/{meal_id}/items/", response_model=schemas.MealItem, status_code=status.HTTP_201_CREATED)
 def add_item(meal_id: int, item: schemas.MealItemCreate, db: Session = Depends(get_db)):
     """Добавить продукт в прием пищи"""
-    # Проверяем существует ли прием пищи
     meal = db.query(models.Meal).filter(models.Meal.id == meal_id).first()
     if not meal:
         raise HTTPException(
@@ -121,7 +157,6 @@ def add_item(meal_id: int, item: schemas.MealItemCreate, db: Session = Depends(g
             detail=f"Прием пищи с id {meal_id} не найден"
         )
     
-    # Проверяем существует ли продукт
     food = db.query(models.Food).filter(models.Food.id == item.food_id).first()
     if not food:
         raise HTTPException(
@@ -129,7 +164,6 @@ def add_item(meal_id: int, item: schemas.MealItemCreate, db: Session = Depends(g
             detail=f"Продукт с id {item.food_id} не найден"
         )
     
-    # Проверяем нет ли уже такого продукта в этом приеме
     existing_item = db.query(models.MealItem).filter(
         models.MealItem.meal_id == meal_id,
         models.MealItem.food_id == item.food_id
@@ -159,6 +193,7 @@ def add_item(meal_id: int, item: schemas.MealItemCreate, db: Session = Depends(g
             detail=f"Ошибка при добавлении продукта: {str(e)}"
         )
 
+
 @router.put("/items/{item_id}", response_model=schemas.MealItem)
 def update_item(item_id: int, item_update: schemas.MealItemUpdate, db: Session = Depends(get_db)):
     """Изменить количество продукта в приеме"""
@@ -184,6 +219,7 @@ def update_item(item_id: int, item_update: schemas.MealItemUpdate, db: Session =
             detail=f"Ошибка при обновлении: {str(e)}"
         )
 
+
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(item_id: int, db: Session = Depends(get_db)):
     """Удалить продукт из приема"""
@@ -203,4 +239,4 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка при удалении: {str(e)}"
-        )pass
+        )
