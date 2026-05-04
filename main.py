@@ -9,6 +9,7 @@ from app.schemas import UserCreate, WorkoutCreate, ExerciseCreate
 from datetime import datetime
 from app.api import products
 from app.routers import meals
+from app.api.dashboard_router import router as dashboard_router
 # Создаю приложение
 app = FastAPI(title="Fitness Tracker API")
 
@@ -210,3 +211,5 @@ def get_workouts_history(
         "top_exercises": top_exercises,
         "progress": progress
     }
+
+app.include_router(dashboard_router)
