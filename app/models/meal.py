@@ -7,13 +7,17 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.meal_item import MealItem
 
+class Meal(BaseEntry, table=True):
+    __tablename__ = "meals"
 
-
-class Meal(BaseEntry, table=True):   # ← наследуемся от BaseEntry
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    # user_id и created_at/updated_at теперь приходят из BaseEntry
-    # поле date удаляем, если оно дублирует created_at
-    # если date нужна для другого – оставляем
+    date: datetime = Field(default_factory=datetime.utcnow)  # ← дата приёма пищи, оставляем
+    # user_id удалён (есть в BaseEntry)
+    # created_at и updated_at удалены (есть в BaseEntry)
+
     user: Optional["User"] = Relationship(back_populates="meals")
-    items: List["MealItem"] = Relationship(...)
+    items: List["MealItem"] = Relationship(
+        back_populates="meal",
+        cascade="all, delete-orphan"
+    )
