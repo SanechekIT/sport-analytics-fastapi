@@ -4,7 +4,7 @@ from typing import Optional
 
 class BaseEntry(SQLModel):
     class Config:
-        abstract = True  # ← не создаём отдельную таблицу
+        abstract = True
 
     user_id: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
