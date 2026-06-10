@@ -17,7 +17,7 @@ class Meal(BaseEntry, table=True):
     user: Optional["User"] = Relationship(back_populates="meals")
     items: List["MealItem"] = Relationship(
         back_populates="meal",
-        cascade="all, delete-orphan"
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     
     proteins: float = Field(default=0.0, ge=0, description="Total proteins in grams")
