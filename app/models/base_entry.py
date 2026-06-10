@@ -2,14 +2,14 @@ from sqlmodel import SQLModel, Field
 from datetime import datetime
 from typing import Optional
 
-class Prediction(BaseEntry, table=True):
-    __tablename__ = "predictions"
-    
-    id: Optional[int] = Field(default=None, primary_key=True)
-
 class BaseEntry(SQLModel):
     class Config:
         abstract = True
+
+class Prediction(BaseEntry, table=True):
+        __tablename__ = "predictions"
+
+        id: Optional[int] = Field(default=None, primary_key=True)
 
     user_id: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
