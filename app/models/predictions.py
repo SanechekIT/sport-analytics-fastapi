@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 
 class Prediction(BaseEntry, table=True):
     __tablename__ = "predictions"
-
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", nullable=False)
     target_date: date
     predicted_weight_kg: float = Field(gt=0, description="Предсказанный вес в кг")
