@@ -5,7 +5,7 @@ from app.models.base_entry import BaseEntry
 
 if TYPE_CHECKING:
     from app.models.user import User
-    from app.models.meal_item import MealItem
+    from app.models.mealitem import MealItem
 
 class Meal(BaseEntry, table=True):
     __tablename__ = "meals"
@@ -19,7 +19,7 @@ class Meal(BaseEntry, table=True):
         back_populates="meal",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    
+
     proteins: float = Field(default=0.0, ge=0, description="Total proteins in grams")
     fats: float = Field(default=0.0, ge=0, description="Total fats in grams")
     carbs: float = Field(default=0.0, ge=0, description="Total carbohydrates in grams")
