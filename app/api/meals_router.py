@@ -240,3 +240,36 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка при удалении: {str(e)}"
         )
+
+
+@router.get("/", response_model=dict)
+def list_meals(
+    skip: int = 0, 
+    limit: int = 100,
+    meal_type: str = None,
+    date_from: datetime = None,
+    date_to: datetime = None,
+    db: Session = Depends(get_db)
+):
+    """Список приемов с пагинацией и фильтрацией"""
+    query = db.query(models.Meal)
+    
+    if meal_type:
+        query = query.filter(models.Meal.meal_type == meal_type)
+    
+    if date_from:
+        query = query.filter(models.Meal.date_time >= date_from)
+    if date_to:
+        query = query.filter(models.Meal.date_time <= date_to)
+    
+    # Подсчёт общего количества
+    total = query.count()
+    
+    meals = query.order_by(models.Meal.date_time.desc()).offset(skip).limit(limit).all()
+    
+    return {
+        "items": meals,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
