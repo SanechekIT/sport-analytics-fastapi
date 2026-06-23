@@ -30,7 +30,7 @@ def create_meal(meal: schemas.MealCreate, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/", response_model=list[schemas.Meal])
+@router.get("/", response_model=schemas.MealPaginatedResponse)
 def list_meals(
     skip: int = 0, 
     limit: int = 100,
@@ -39,7 +39,7 @@ def list_meals(
     date_to: datetime = None,
     db: Session = Depends(get_db)
 ):
-    """Список приемов с возможностью фильтрации"""
+    """Список приемов с пагинацией и фильтрацией"""
     query = db.query(models.Meal)
     
     if meal_type:
@@ -50,9 +50,17 @@ def list_meals(
     if date_to:
         query = query.filter(models.Meal.date_time <= date_to)
     
+    # Подсчёт общего количества
+    total = query.count()
+    
     meals = query.order_by(models.Meal.date_time.desc()).offset(skip).limit(limit).all()
-    return meals
-
+    
+    return {
+        "items": meals,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 @router.get("/daily/", response_model=list[schemas.Meal])
 def get_meals_by_date(
