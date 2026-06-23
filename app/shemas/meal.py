@@ -21,3 +21,9 @@ class MealUpdate(BaseModel):
     meal_type: str | None = None
     date: date | None = None
     items: List[MealItemCreate] | None = None  # если меняем состав
+
+class MealPaginatedResponse(BaseModel):
+    items: List[schemas.Meal]
+    total: int
+    skip: int
+    limit: int
