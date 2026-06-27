@@ -1,106 +1,76 @@
-from fastapi import APIRouter, HTTPException, status
-from app.models.mealitem import MealItem
-from app.shemas.meal_item import MealItemCreate, MealItemUpdate
-from app.repositories.meal_item_repository import MealItemRepository
-from typing import List
+# app/api/products.py (добавляем новый эндпоинт)
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from datetime import datetime
+from app.schemas.products import ProductCreate, Product as ProductSchema
+from app.models.product import Product  # Твоя SQLAlchemy модель
+from app.database.connection import get_db
 
-# Создаю роутер
-router = APIRouter(prefix="/products", tags=["products"])
+router = APIRouter()
 
-# Создаю один экземпляр репозитория для всех эндпоинтов
-repository = MealItemRepository()
+# ... (твои существующие эндпоинты)
 
-
-# POST /products/ - СОЗДАНИЕ (Create)
-@router.post("/", response_model=MealItem, status_code=status.HTTP_201_CREATED)
-def create_product(product: MealItemCreate):
+@router.post("/manual", response_model=ProductSchema)
+async def create_product_manually(
+    product_data: ProductCreate,
+    db: Session = Depends(get_db)
+):
     """
-    Создает новый продукт
-
-    - **name**: название продукта
-    - **description**: описание (необязательно)
-    - **calories**: калории
-    - **protein**: белки
-    - **fat**: жиры
-    - **carbohydrates**: углеводы
+    Создает новый продукт на основе ручного ввода пользователя.
+    
+    Поля:
+    - **name**: Название продукта
+    - **calories**: Калории на 100 г
+    - **proteins**: Белки на 100 г
+    - **fats**: Жиры на 100 г
+    - **carbs**: Углеводы на 100 г
     """
-    # Преобразуем схему создания в модель
-    new_product = MealItem(**product.dict())
-    # Сохраняем в репозитории
-    created = repository.create(new_product)
-    return created
-
-
-# GET /products/ - ПОЛУЧЕНИЕ ВСЕХ (Read All)
-@router.get("/", response_model=List[MealItem])
-def get_all_products():
-    """
-    Возвращает список всех продуктов
-    """
-    return repository.get_all()
-
-
-# GET /products/{product_id} - ПОЛУЧЕНИЕ ОДНОГО (Read One)
-@router.get("/{product_id}", response_model=MealItem)
-def get_product(product_id: int):
-    """
-    Возвращает продукт по его ID
-    """
-    product = repository.get_by_id(product_id)
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Продукт с ID {product_id} не найден"
+    try:
+        # Проверяем, нет ли уже продукта с таким названием у этого пользователя
+        # TODO: Заменить user_id=1 на ID текущего авторизованного пользователя
+        existing_product = db.query(Product).filter(
+            Product.name == product_data.name,
+            Product.user_id == 1
+        ).first()
+        
+        if existing_product:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Продукт с названием '{product_data.name}' уже существует"
+            )
+        
+        # Создаём новый продукт
+        new_product = Product(
+            name=product_data.name,
+            calories=product_data.calories,
+            proteins=product_data.proteins,
+            fats=product_data.fats,
+            carbs=product_data.carbs,
+            user_id=1,  # TODO: Взять из авторизации
+            created_at=datetime.utcnow()
         )
-    return product
-
-
-# PUT /products/{product_id} - ОБНОВЛЕНИЕ (Update)
-@router.put("/{product_id}", response_model=MealItem)
-def update_product(product_id: int, product_update: MealItemUpdate):
-    """
-    Обновляет существующий продукт
-
-    - **product_id**: ID продукта для обновления
-    - **product_update**: новые данные (все поля опциональны)
-    """
-    # Создаем продукт с обновленными данными
-    updated_data = MealItem(**product_update.dict())
-    updated = repository.update(product_id, updated_data)
-
-    if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Продукт с ID {product_id} не найден"
+        
+        db.add(new_product)
+        db.commit()
+        db.refresh(new_product)
+        
+        # Возвращаем созданный продукт
+        return ProductSchema(
+            id=new_product.id,
+            name=new_product.name,
+            calories=new_product.calories,
+            proteins=new_product.proteins,
+            fats=new_product.fats,
+            carbs=new_product.carbs,
+            user_id=new_product.user_id,
+            created_at=new_product.created_at
         )
-    return updated
-
-
-# DELETE /products/{product_id} - УДАЛЕНИЕ (Delete)
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(product_id: int):
-    """
-    Удаляет продукт по ID
-    """
-    deleted = repository.delete(product_id)
-    if not deleted:
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Продукт с ID {product_id} не найден"
+            status_code=400,
+            detail=f"Ошибка при создании продукта: {str(e)}"
         )
-    # Для 204 статуса ничего не возвращаем
-    return None
-
-
-# Дополнительно: поиск по названию (если нужен)
-@router.get("/search/", response_model=List[MealItem])
-def search_products(query: str):
-    """
-    Ищет продукты по названию (частичное совпадение)
-    """
-    all_products = repository.get_all()
-    results = [
-        product for product in all_products
-        if query.lower() in product.name.lower()
-    ]
-    return results
