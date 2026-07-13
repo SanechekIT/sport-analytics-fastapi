@@ -27,3 +27,7 @@ class MealPaginatedResponse(BaseModel):
     total: int
     skip: int
     limit: int
+    
+class MealFromTextRequest(BaseModel):
+    text: str
+    meal_type: str = "other"
