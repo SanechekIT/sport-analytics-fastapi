@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app import models, schemas
 from app.database import get_db
+from app.utils.text_parser import parse_meal_text
 from datetime import datetime
 
 router = APIRouter(prefix="/meals", tags=["meals"])
@@ -61,6 +62,7 @@ def list_meals(
         "skip": skip,
         "limit": limit
     }
+
 
 @router.get("/daily/", response_model=list[schemas.Meal])
 def get_meals_by_date(
@@ -250,34 +252,80 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/", response_model=dict)
-def list_meals(
-    skip: int = 0, 
-    limit: int = 100,
-    meal_type: str = None,
-    date_from: datetime = None,
-    date_to: datetime = None,
+# ============================================
+# НОВЫЙ ЭНДПОИНТ: СОЗДАНИЕ ПРИЁМА ИЗ ТЕКСТА
+# ============================================
+
+@router.post("/from-text", response_model=schemas.Meal, status_code=status.HTTP_201_CREATED)
+def create_meal_from_text(
+    text: str,
+    meal_type: str = "other",
     db: Session = Depends(get_db)
 ):
-    """Список приемов с пагинацией и фильтрацией"""
-    query = db.query(models.Meal)
+    """
+    Создать приём пищи из текста.
     
-    if meal_type:
-        query = query.filter(models.Meal.meal_type == meal_type)
+    Пример:
+        "курица 200г рис 150г"
     
-    if date_from:
-        query = query.filter(models.Meal.date_time >= date_from)
-    if date_to:
-        query = query.filter(models.Meal.date_time <= date_to)
-    
-    # Подсчёт общего количества
-    total = query.count()
-    
-    meals = query.order_by(models.Meal.date_time.desc()).offset(skip).limit(limit).all()
-    
-    return {
-        "items": meals,
-        "total": total,
-        "skip": skip,
-        "limit": limit
-    }
+    Парсит текст, находит или создаёт продукты в БД,
+    и добавляет их в новый приём пищи.
+    """
+    try:
+        # 1. Парсим текст
+        items = parse_meal_text(text)
+        
+        if not items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Не удалось распознать продукты в тексте. Пример: 'курица 200г рис 150г'"
+            )
+        
+        # 2. Создаём приём пищи
+        db_meal = models.Meal(
+            name=f"Приём из текста: {text[:50]}..." if len(text) > 50 else f"Приём из текста: {text}",
+            meal_type=meal_type,
+            date_time=datetime.now(),
+            notes=text
+        )
+        db.add(db_meal)
+        db.flush()  # чтобы получить id
+        
+        # 3. Для каждого продукта ищем в БД или создаём
+        for item in items:
+            # Ищем продукт по имени (частичное совпадение)
+            food = db.query(models.Food).filter(
+                models.Food.name.ilike(f"%{item['name']}%")
+            ).first()
+            
+            if not food:
+                # Если не нашли — создаём базовый продукт
+                food = models.Food(
+                    name=item['name'],
+                    calories_per_100g=0,  # TODO: запросить у пользователя
+                    protein_per_100g=0,
+                    fats_per_100g=0,
+                    carbs_per_100g=0
+                )
+                db.add(food)
+                db.flush()
+            
+            # Добавляем в приём
+            meal_item = models.MealItem(
+                meal_id=db_meal.id,
+                food_id=food.id,
+                quantity=item['weight'],
+                unit="g"
+            )
+            db.add(meal_item)
+        
+        db.commit()
+        db.refresh(db_meal)
+        return db_meal
+        
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка при создании приёма из текста: {str(e)}"
+        )
