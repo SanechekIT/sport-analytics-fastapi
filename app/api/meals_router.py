@@ -251,29 +251,30 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
             detail=f"Ошибка при удалении: {str(e)}"
         )
 
-
-# ============================================
-# НОВЫЙ ЭНДПОИНТ: СОЗДАНИЕ ПРИЁМА ИЗ ТЕКСТА
-# ============================================
-
 @router.post("/from-text", response_model=schemas.Meal, status_code=status.HTTP_201_CREATED)
 def create_meal_from_text(
-    text: str,
-    meal_type: str = "other",
+    request: schemas.MealFromTextRequest,
     db: Session = Depends(get_db)
 ):
     """
     Создать приём пищи из текста.
     
-    Пример:
-        "курица 200г рис 150г"
-    
-    Парсит текст, находит или создаёт продукты в БД,
-    и добавляет их в новый приём пищи.
+    Пример запроса:
+    {
+        "text": "курица 200г рис 150г",
+        "meal_type": "lunch"
+    }
     """
+    # Проверка на пустой текст
+    if not request.text or not request.text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Текст не может быть пустым"
+        )
+    
     try:
         # 1. Парсим текст
-        items = parse_meal_text(text)
+        items = parse_meal_text(request.text)
         
         if not items:
             raise HTTPException(
@@ -283,26 +284,24 @@ def create_meal_from_text(
         
         # 2. Создаём приём пищи
         db_meal = models.Meal(
-            name=f"Приём из текста: {text[:50]}..." if len(text) > 50 else f"Приём из текста: {text}",
-            meal_type=meal_type,
+            name=f"Приём из текста: {request.text[:50]}..." if len(request.text) > 50 else f"Приём из текста: {request.text}",
+            meal_type=request.meal_type,
             date_time=datetime.now(),
-            notes=text
+            notes=request.text
         )
         db.add(db_meal)
-        db.flush()  # чтобы получить id
+        db.flush()
         
         # 3. Для каждого продукта ищем в БД или создаём
         for item in items:
-            # Ищем продукт по имени (частичное совпадение)
             food = db.query(models.Food).filter(
                 models.Food.name.ilike(f"%{item['name']}%")
             ).first()
             
             if not food:
-                # Если не нашли — создаём базовый продукт
                 food = models.Food(
                     name=item['name'],
-                    calories_per_100g=0,  # TODO: запросить у пользователя
+                    calories_per_100g=0,
                     protein_per_100g=0,
                     fats_per_100g=0,
                     carbs_per_100g=0
@@ -310,7 +309,6 @@ def create_meal_from_text(
                 db.add(food)
                 db.flush()
             
-            # Добавляем в приём
             meal_item = models.MealItem(
                 meal_id=db_meal.id,
                 food_id=food.id,
